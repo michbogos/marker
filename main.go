@@ -19,7 +19,21 @@ func generate(in_root string, s string, out_root string) error {
 	check_err(e)
 	check_err(e)
 	println(string(buffer))
-	e = os.WriteFile(path.Join(out_root, strings.Replace(s, ".md", ".html", 1)), buffer, 0775)
+	html_string, e := os.ReadFile("template.html")
+	check_err(e)
+	generated_string := ""
+	for _, line := range strings.Split(string(buffer), "\n") {
+		if len(line) > 0 {
+			switch line[0] {
+			case '#':
+				generated_string += "<h1>" + line[1:] + "</h1>\n"
+			default:
+				generated_string += line
+			}
+		}
+	}
+	html_string = []byte(strings.Replace(string(html_string), "{{Content}}", generated_string, -1))
+	e = os.WriteFile(path.Join(out_root, strings.Replace(s, ".md", ".html", 1)), html_string, 0775)
 	check_err(e)
 	return nil
 }
