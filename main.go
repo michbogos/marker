@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path"
@@ -22,13 +23,44 @@ func generate(in_root string, s string, out_root string) error {
 	html_string, e := os.ReadFile("template.html")
 	check_err(e)
 	generated_string := ""
+	in_list := false
+	in_paragraph := false
 	for _, line := range strings.Split(string(buffer), "\n") {
 		if len(line) > 0 {
 			switch line[0] {
 			case '#':
-				generated_string += "<h1>" + line[1:] + "</h1>\n"
+				if in_list {
+					generated_string += fmt.Sprint("</ul>\n") // End list
+					in_list = false
+				}
+				i := 0
+				for line[i] == '#' && i < 7 {
+					i++
+				}
+				generated_string += fmt.Sprint("<h", i, ">", line[1:], "</h", i, ">\n")
+			case '-': // Add flag for in_list
+				if !in_list {
+					generated_string += fmt.Sprint("<ul>\n", "<li>", line[1:], "</li>", "\n") // New list start
+					in_list = true
+				}
 			default:
-				generated_string += line
+				if in_list {
+					generated_string += fmt.Sprint("</ul>\n") // End list
+					in_list = false
+				}
+				generated_string += line + "\n"
+			}
+		} else {
+			if in_list {
+				in_list = false
+				generated_string += fmt.Sprint("</ul>\n")
+			}
+			if !in_paragraph { // Empty line starts p element
+				in_paragraph = true
+				generated_string += fmt.Sprint("<p>\n")
+			} else { // Or ends it
+				in_paragraph = false
+				generated_string += fmt.Sprint("</p>\n")
 			}
 		}
 	}
