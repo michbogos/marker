@@ -15,6 +15,17 @@ func check_err(e error) {
 	}
 }
 
+type Parser struct {
+	in_list      bool
+	in_paragraph bool
+}
+
+// func end_paragraph(p *Parser) string {
+// 	if p.in_paragraph {
+// 		p.in_paragraph = !p.in
+// 	}
+// }
+
 func generate(in_root string, s string, out_root string) error {
 	buffer, e := os.ReadFile(path.Join(in_root, s))
 	check_err(e)
@@ -25,8 +36,9 @@ func generate(in_root string, s string, out_root string) error {
 	generated_string := ""
 	in_list := false
 	in_paragraph := false
-	for _, line := range strings.Split(string(buffer), "\n") {
-		if len(line) > 0 {
+	lines := strings.Split(string(buffer), "\n")
+	for i, line := range lines {
+		if len(line) > 0 { // Non-empty line
 			switch line[0] {
 			case '#':
 				if in_list {
@@ -50,7 +62,7 @@ func generate(in_root string, s string, out_root string) error {
 				}
 				generated_string += line + "\n"
 			}
-		} else {
+		} else if i < len(lines)-1 { // If line empty but not the last line
 			if in_list {
 				in_list = false
 				generated_string += fmt.Sprint("</ul>\n")
@@ -61,6 +73,16 @@ func generate(in_root string, s string, out_root string) error {
 			} else { // Or ends it
 				in_paragraph = false
 				generated_string += fmt.Sprint("</p>\n")
+			}
+		}
+		if i == len(lines)-1 {
+			if in_list {
+				in_list = false
+				generated_string += "</ul>\n"
+			}
+			if in_paragraph {
+				in_paragraph = false
+				generated_string += "</p>\n"
 			}
 		}
 	}
