@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -34,15 +35,20 @@ func generate(in_root string, s string, out_root string) error {
 	html_string, e := os.ReadFile("template.html")
 	check_err(e)
 	generated_string := ""
+	regex, _ := regexp.Compile(`\*`)
 	in_list := false
 	in_paragraph := false
 	lines := strings.Split(string(buffer), "\n")
 	for i, line := range lines {
 		if len(line) > 0 { // Non-empty line
+			indices := regex.FindAllIndex([]byte(line), -1) // Gives a list of start end pairs
+			if len(indices) > 0 {
+				println(indices[0][1])
+			}
 			switch line[0] {
 			case '#':
 				if in_list {
-					generated_string += fmt.Sprint("</ul>\n") // End list
+					generated_string += "</ul>\n" // End list
 					in_list = false
 				}
 				i := 0
@@ -57,7 +63,7 @@ func generate(in_root string, s string, out_root string) error {
 				}
 			default:
 				if in_list {
-					generated_string += fmt.Sprint("</ul>\n") // End list
+					generated_string += "</ul>\n" // End list
 					in_list = false
 				}
 				generated_string += line + "\n"
@@ -65,14 +71,14 @@ func generate(in_root string, s string, out_root string) error {
 		} else if i < len(lines)-1 { // If line empty but not the last line
 			if in_list {
 				in_list = false
-				generated_string += fmt.Sprint("</ul>\n")
+				generated_string += "</ul>\n"
 			}
 			if !in_paragraph { // Empty line starts p element
 				in_paragraph = true
-				generated_string += fmt.Sprint("<p>\n")
+				generated_string += "<p>\n"
 			} else { // Or ends it
 				in_paragraph = false
-				generated_string += fmt.Sprint("</p>\n")
+				generated_string += "</p>\n"
 			}
 		}
 		if i == len(lines)-1 {
