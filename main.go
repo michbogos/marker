@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strings"
 )
 
@@ -35,15 +34,28 @@ func generate(in_root string, s string, out_root string) error {
 	html_string, e := os.ReadFile("template.html")
 	check_err(e)
 	generated_string := ""
-	regex, _ := regexp.Compile(`\*`)
 	in_list := false
 	in_paragraph := false
 	lines := strings.Split(string(buffer), "\n")
-	for i, line := range lines {
-		if len(line) > 0 { // Non-empty line
-			indices := regex.FindAllIndex([]byte(line), -1) // Gives a list of start end pairs
-			if len(indices) > 0 {
-				println(indices[0][1])
+	for i, l := range lines {
+		if len(l) > 0 { // Non-empty line
+			// indices := regex.FindAllIndex([]byte(line), -1) // Gives a list of start end pairs
+			// if len(indices) > 0 {
+			// 	println(indices[0][1])
+			// }
+			line := l
+			in_bold := 0
+			ch_idx := 0
+			for ch := range l {
+				if ch == '*' && in_bold < 4 {
+					in_bold += 1
+				} else if ch != '*' && in_bold > 0 {
+					line = l[:ch_idx] + "<b>" + l[ch_idx:]
+				} else if ch == '*' && in_bold > 0 {
+					line = l[:ch_idx] + "</b>" + l[ch_idx:]
+					in_bold = 0
+				}
+				ch_idx += 1
 			}
 			switch line[0] {
 			case '#':
